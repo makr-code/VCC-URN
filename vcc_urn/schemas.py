@@ -1,11 +1,11 @@
 from pydantic import BaseModel, Field
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 
 class GenerateRequest(BaseModel):
-    state: str = Field(..., example="nrw")
-    domain: str = Field(..., example="bimschg")
-    obj_type: str = Field(..., example="anlage")
-    local_aktenzeichen: str = Field(..., example="4711-0815-K1")
+    state: str = Field(..., json_schema_extra={"example": "nrw"})
+    domain: str = Field(..., json_schema_extra={"example": "bimschg"})
+    obj_type: str = Field(..., json_schema_extra={"example": "anlage"})
+    local_aktenzeichen: str = Field(..., json_schema_extra={"example": "4711-0815-K1"})
     uuid: Optional[str] = None
     version: Optional[str] = None
     store: Optional[bool] = True
@@ -24,3 +24,21 @@ class ValidateResponse(BaseModel):
 class StoreRequest(BaseModel):
     urn: str
     manifest: Dict[str, Any]
+
+class SearchItem(BaseModel):
+    urn: str
+    manifest: Dict[str, Any]
+
+class SearchResponse(BaseModel):
+    count: int
+    results: List[SearchItem]
+
+
+class AdminCatalogsSetRequest(BaseModel):
+    catalogs: Dict[str, Dict[str, List[str]]]
+
+
+class AdminCatalogsResponse(BaseModel):
+    global_domains: List[str]
+    global_obj_types: List[str]
+    state_catalogs: Dict[str, Dict[str, List[str]]]

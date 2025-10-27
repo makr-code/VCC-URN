@@ -1,61 +1,65 @@
-from fastapi import FastAPI, Depends, HTTPException, Query
-from fastapi.responses import JSONResponse
-from vcc_urn.schemas import GenerateRequest, GenerateResponse, ValidateRequest, ValidateResponse, StoreRequest
+from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 from vcc_urn.service import URNService
-from vcc_urn.db import init_db
+from vcc_urn.db import init_db, SessionLocal
 from vcc_urn.config import settings
+from vcc_urn.api.v1.endpoints import get_router as get_v1_router
+from vcc_urn.api.admin.endpoints import get_router as get_admin_router
 
-app = FastAPI(title="VCC URN Resolver (OOP)", version="0.1.0")
 
-@app.on_event("startup")
-def on_startup():
-    # initialize DB (creates tables)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: initialize DB (creates tables)
     init_db()
+    yield
+    # Shutdown: cleanup if needed
 
-def get_service():
-    # each request gets a service instance (manages session internally)
-    return URNService()
 
-@app.get("/")
-def info():
-    return {"service": "VCC URN resolver", "nid": settings.nid}
+app = FastAPI(title="VCC URN Resolver (OOP)", version="0.1.0", lifespan=lifespan)
 
-@app.post("/generate", response_model=GenerateResponse)
-def generate(payload: GenerateRequest, svc: URNService = Depends(get_service)):
+# CORS
+origins_cfg = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"] if origins_cfg == ["*"] else origins_cfg,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+def get_db():
+    db = SessionLocal()
     try:
-        urn = svc.generate(state=payload.state, domain=payload.domain, obj_type=payload.obj_type, local=payload.local_aktenzeichen, uuid=payload.uuid, version=payload.version, store=payload.store)
-        return GenerateResponse(urn=urn)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        yield db
+    finally:
+        db.close()
 
-@app.post("/validate", response_model=ValidateResponse)
-def validate(payload: ValidateRequest, svc: URNService = Depends(get_service)):
-    r = svc.validate(payload.urn)
-    return JSONResponse(content=r)
+def get_service(db=Depends(get_db)):
+    # each request gets a service instance with a per-request db session
+    return URNService(db_session=db)
 
-@app.post("/store")
-def store(req: StoreRequest, svc: URNService = Depends(get_service)):
-    try:
-        svc.store_manifest(req.urn, req.manifest)
-        return {"status": "ok", "urn": req.urn}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
 
-@app.get("/resolve")
-def resolve(urn: str = Query(...), svc: URNService = Depends(get_service)):
-    try:
-        return svc.resolve(urn)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-@app.get("/search")
-def search(uuid: str = Query(...), svc: URNService = Depends(get_service)):
-    try:
-        return {"count": len(svc.search_by_uuid(uuid)), "results": svc.search_by_uuid(uuid)}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+app.include_router(get_v1_router())
+app.include_router(get_admin_router())
 
 
 def run():
     import uvicorn
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+
+# Info and health endpoints (unversioned)
+@app.get("/")
+def info():
+    return {"service": "VCC URN resolver", "nid": settings.nid}
+
+@app.get("/healthz")
+def healthz():
+    return {"status": "ok"}
+
+@app.get("/readyz")
+def readyz(svc: URNService = Depends(get_service)):
+    ok = svc.db_health()
+    if not ok:
+        raise HTTPException(status_code=503, detail="database not ready")
+    return {"status": "ready"}
