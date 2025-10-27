@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "vcc-urn-resolver"
+version = "0.1.0"
+description = "URN resolver for German administration (OOP reference implementation)"
+authors = ["makr-code"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.95.2"
+uvicorn = {extras = ["standard"], version = "^0.22.0"}
+pydantic = "^1.10.11"
+SQLAlchemy = "^1.4.0"
+alembic = "^2.0.0"
+python-dotenv = "^1.0.0"
+
+[tool.poetry.scripts]
+start = "app.main:run"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
