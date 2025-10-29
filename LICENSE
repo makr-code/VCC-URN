@@ -19,3 +19,53 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+================================================================================
+COMMONS CLAUSE FOR GOVERNMENT PARTNERSHIPS
+================================================================================
+
+While this software is provided under the permissive MIT License, users who
+modify this software are STRONGLY ENCOURAGED (but not legally required) to:
+
+1. SHARE IMPROVEMENTS: Contribute modifications back to the community,
+   especially improvements to:
+   - Security features (PKI, RBAC, RLS, Audit logging)
+   - Database adapters and performance optimizations
+   - Government/public sector specific features
+   - Bug fixes and vulnerability patches
+
+2. GOVERNMENT COLLABORATION: Organizations working in the public sector,
+   government agencies, or public administration are particularly encouraged
+   to share improvements that benefit public infrastructure and transparency.
+
+3. HOW TO CONTRIBUTE:
+   - Submit Pull Requests: https://github.com/makr-code/VCC-UDS3/pulls
+   - Report Issues: https://github.com/makr-code/VCC-UDS3/issues
+   - Contact: ma.krueger@outlook.com
+
+4. RECOGNITION: Organizations that contribute improvements will be recognized
+   in the project's CONTRIBUTORS.md file and release notes.
+
+This clause does NOT impose legal obligations beyond the MIT License terms.
+It is a request for good faith collaboration in the spirit of open source
+and public benefit, particularly for government and administrative software.
+
+Users who choose not to share improvements are still in full compliance with
+the MIT License and may use this software without restriction.
+
+================================================================================
+RATIONALE
+================================================================================
+
+This software is developed with government partnerships and public
+administration use cases in mind. Shared improvements help:
+
+- Strengthen security for all public sector users
+- Reduce duplicate development efforts across agencies
+- Improve transparency and accountability in government IT
+- Build trust through collaborative open source development
+
+We believe that software serving the public good benefits most when
+improvements are shared openly, while respecting the freedom granted
+by the MIT License.
+
+For questions about this Commons Clause, contact: ma.krueger@outlook.com
