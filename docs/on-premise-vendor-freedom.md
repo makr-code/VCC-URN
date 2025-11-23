@@ -17,24 +17,29 @@ Alle verwendeten Technologien sind Open-Source und selbst hostbar:
 - ✅ **PostgreSQL** - PostgreSQL License (permissive)
 - ✅ **SQLite** - Public Domain
 - ✅ **Redis** - BSD License, selbst hostbar
-- ✅ **Strawberry GraphQL** - MIT License
+- ✅ **Themis AQL** - VCC-intern, Open-Source (bevorzugt)
+- ⚠️ **Strawberry GraphQL** - MIT License (optional, wird durch Themis AQL ersetzt)
 - ✅ **Prometheus** - Apache 2.0 License
 - ✅ **Docker** - Apache 2.0 License
 - ✅ **Kubernetes** - Apache 2.0 License
 
 **Phase 3 (geplant):**
-- ✅ **Apollo Router** - Elastic License 2.0 (selbst hostbar)
-- ✅ **Temporal.io** - MIT License (selbst hostbar)
+- ✅ **Themis Federation Gateway** - VCC-intern, selbst hostbar (bevorzugt)
+- ⚠️ **Apollo Router** - Elastic License 2.0 (vermieden - nicht vendor-free genug)
+- ✅ **Temporal.io** - MIT License (selbst hostbar, für Saga-Pattern)
 - ✅ **Keycloak** - Apache 2.0 License (selbst hostbar)
 - ✅ **OpenTelemetry** - Apache 2.0 License
 - ✅ **Jaeger** - Apache 2.0 License
+
+**Wichtig:** VCC verwendet **Themis AQL** statt GraphQL (siehe [ADR-0001](./adr/0001-themis-aql-statt-graphql.md))
 
 ### 2. Standard-Protokolle
 
 Keine proprietären APIs oder Protokolle:
 
 - ✅ **HTTP/HTTPS** - Offener Standard (RFC 2616/7230)
-- ✅ **GraphQL** - Offene Spezifikation
+- ✅ **Themis AQL** - VCC-intern, offen spezifiziert
+- ⚠️ **GraphQL** - Offene Spezifikation (optional, wird durch AQL ersetzt)
 - ✅ **REST** - Architekturstil (nicht proprietär)
 - ✅ **OIDC/OAuth 2.0** - Offene Standards (RFC 6749, RFC 7519)
 - ✅ **SAML 2.0** - OASIS-Standard

@@ -256,19 +256,24 @@ logger.info("urn_resolved", urn=urn_str, source="local", latency_ms=42)
 
 **Priorität:** MITTEL (für Pilot mit 2-3 Bundesländern)
 
-#### 3.2.1 GraphQL-API als Föderations-Interface
+#### 3.2.1 Themis AQL als Föderations-Interface
 
-**Motivation:** REST ist für komplexe, verteilte Abfragen limitiert. GraphQL bietet:
-- **Präzise Queries** – Client fragt nur benötigte Felder an (kein Over-/Underfetching)
-- **Federation Native** – Apollo Federation ermöglicht nahtlose Integration von 16 Subgraphs
+**WICHTIG:** Statt GraphQL verwenden wir **Themis AQL** (siehe [ADR-0001](./adr/0001-themis-aql-statt-graphql.md))
+
+**Motivation:** REST ist für komplexe, verteilte Abfragen limitiert. Themis AQL bietet:
+- **VCC-nativ** – Entwickelt für föderale Verwaltungsstrukturen
+- **Präzise Queries** – Optimiert für URN-Auflösung und föderierte Daten
+- **Federation Native** – Integriert mit Veritas (Graph-DB) und VCC-Ökosystem
 - **Type Safety** – Schema als Vertrag zwischen Ländern
+- **Souveränität** – Keine Abhängigkeit von externen Anbietern (Apollo/GraphQL)
 
 **Implementierung:**
 
-1. **GraphQL-Schema definieren** (`vcc_urn/api/graphql/schema.graphql`)
+1. **Themis AQL Schema definieren** (`vcc_urn/api/aql/schema.aql`)
 
-```graphql
-type URN {
+```aql
+# URN Entity Definition
+ENTITY URN {
   urn: String!
   nid: String!
   state: String!
@@ -276,48 +281,45 @@ type URN {
   objType: String!
   localAktenzeichen: String!
   uuid: String!
-  version: String
+  version: String?
 }
 
-type Manifest {
-  urn: String!
+# Manifest Entity Definition  
+ENTITY Manifest {
+  urn: String! @key
   manifestJson: JSON!
   createdAt: DateTime!
   updatedAt: DateTime!
 }
 
-type Query {
-  resolveURN(urn: String!): Manifest
-  searchByUUID(uuid: String!, limit: Int, offset: Int): [Manifest!]!
-  validateURN(urn: String!): ValidationResult!
-}
+# Query Operations
+QUERY resolveURN(urn: String!): Manifest
+QUERY searchByUUID(uuid: String!, limit: Int = 50, offset: Int = 0): [Manifest!]!
+QUERY validateURN(urn: String!): ValidationResult!
+QUERY resolveBatch(urns: [String!]!): [Manifest?]!
 
-type Mutation {
-  generateURN(input: GenerateInput!): URN!
-  storeManifest(urn: String!, manifest: JSON!): Manifest!
-}
+# Mutation Operations
+MUTATION generateURN(input: GenerateInput!): URN!
+MUTATION storeManifest(urn: String!, manifest: JSON!): Manifest!
 ```
 
-2. **Strawberry oder Ariadne** als GraphQL-Framework (FastAPI-kompatibel)
+2. **Themis AQL Executor Integration** (FastAPI-kompatibel)
 
-3. **Apollo Federation Support** (für Phase 3 Gateway)
+3. **Themis Federation Support** (für Phase 3 Gateway)
    - `@key` Directives für Entity-Resolution
-   - Subgraph als Teil des Supergraphs
-
-```graphql
-type Manifest @key(fields: "urn") {
-  urn: String!
-  # ... weitere Felder
-}
-```
+   - Föderation über Themis Query Routing
+   - Native Integration mit Veritas Graph-DB
 
 4. **Parallele API-Strategie**
    - REST v1 bleibt bestehen (Backward Compatibility)
-   - GraphQL unter `/graphql` (neue Clients)
-   - Langfristig: Deprecation von REST zugunsten GraphQL
+   - Themis AQL unter `/aql` oder `/api/v2/aql` (neue Clients)
+   - GraphQL optional verfügbar (deprecated, nur für Migration)
+   - Langfristig: REST + AQL als Haupt-APIs
 
 **Technologien:**
-- strawberry-graphql oder ariadne
+- Themis AQL Parser/Executor (VCC-intern)
+- Integration mit Veritas (Graph-DB)
+- **NICHT:** ~~Apollo Federation~~ (externe Abhängigkeit vermieden)
 - Apollo Federation (für Gateway)
 
 #### 3.2.2 Erweiterte Peer-Integration
@@ -368,12 +370,14 @@ type Manifest @key(fields: "urn") {
 - Optional: Metabase für Dashboards (SQL-basiert)
 
 **Deliverables Phase 2:**
-- ✅ GraphQL-API mit Federation-Support
-- ✅ Redis-basierter Cache
-- ✅ mTLS für Peer-Kommunikation
-- ✅ Batch-Resolution-Endpoint
-- ✅ Admin-Dashboard (MVP)
-- ✅ Service Discovery Integration (optional)
+- ✅ Themis AQL-API (statt GraphQL) mit Federation-Support
+- ✅ Redis-basierter Cache (implementiert)
+- ⏳ mTLS für Peer-Kommunikation (Phase 2b)
+- ✅ Batch-Resolution-Endpoint (implementiert)
+- ⏳ Admin-Dashboard (MVP) (Phase 2b)
+- ⏳ Service Discovery Integration (optional) (Phase 2b)
+
+**Hinweis:** GraphQL wurde experimentell implementiert, wird aber durch Themis AQL ersetzt (siehe ADR-0001)
 
 **Erfolgskriterien:**
 - GraphQL-Query-Latenz <100ms (lokale Auflösung)
@@ -391,49 +395,84 @@ type Manifest @key(fields: "urn") {
 
 #### 3.3.1 Zentraler Föderations-Gateway
 
-**Architektur: Apollo Router** (GraphQL Supergraph)
+**Architektur: Themis Federation Gateway** (AQL-basiert)
+
+**WICHTIG:** Statt Apollo Router verwenden wir den **Themis Federation Gateway** (siehe [ADR-0001](./adr/0001-themis-aql-statt-graphql.md))
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│              Apollo Router (Gateway)                │
-│  • Query Planning & Orchestration                   │
+│         Themis Federation Gateway (AQL)             │
+│  • AQL Query Planning & Orchestration               │
 │  • Policy Enforcement (RBAC, Data Residency)        │
 │  • Monitoring & Tracing                             │
+│  • Integration mit Veritas Graph-DB                 │
 └────────┬────────┬────────┬─────────────────┬────────┘
          │        │        │                 │
     ┌────▼───┐ ┌─▼────┐ ┌─▼────┐         ┌──▼─────┐
     │  NRW   │ │  BY  │ │  BW  │   ...   │  SH    │
-    │ (Sub)  │ │ (Sub)│ │ (Sub)│         │ (Sub)  │
+    │ (AQL)  │ │ (AQL)│ │ (AQL)│         │ (AQL)  │
     └────────┘ └──────┘ └──────┘         └────────┘
          VCC-URN Instanzen (je Land)
 ```
 
 **Gateway-Funktionen:**
 
-1. **Query Orchestration**
-   - Föderierte Queries (z.B. „Zeige alle Anlagen von Unternehmen X" → Query über 3 Länder)
+1. **AQL Query Orchestration**
+   - Föderierte AQL-Queries (z.B. „Zeige alle Anlagen von Unternehmen X" → Query über 3 Länder)
    - Parallele Ausführung + Aggregation
+   - Native Veritas Graph-DB Integration
 
 2. **Policy Enforcement Point**
    - Zentrale RBAC-Regeln (via OPA - Open Policy Agent)
    - Data Residency Checks (darf User aus NRW auf BY-Daten zugreifen?)
+   - VCC-spezifische Policies
 
 3. **Distributed Tracing**
    - OpenTelemetry für Ende-zu-Ende-Sichtbarkeit
    - Jaeger/Tempo für Trace-Visualisierung
 
 **Technologien:**
-- Apollo Router (Gateway)
+- **Themis Federation Gateway** (VCC-intern, statt Apollo Router)
 - Open Policy Agent (RBAC)
 - OpenTelemetry (Tracing)
+- **NICHT:** ~~Apollo Router~~ (Vendor-Lock-In vermieden)
 
-#### 3.3.2 Transaktionale Konsistenz: Saga-Orchestrator
+#### 3.3.2 Transaktionale Konsistenz: Themis Transactions
 
 **Use Case:** Länderübergreifende Geschäftsprozesse (z.B. Standortwechsel eines Unternehmens von NRW nach BY)
 
+**WICHTIG:** Themis bietet native Transaktions-Unterstützung, Saga-Pattern als Fallback
+
 **Implementierung:**
 
-1. **Saga-Definition** (BPMN/YAML)
+1. **Themis Transaction** (bevorzugt)
+
+```aql
+# AQL Transaction für Standortwechsel
+BEGIN TRANSACTION relocate_company_site
+
+  # Schritt 1: Archive in NRW
+  UPDATE Manifest 
+  WHERE urn = "urn:de:nrw:bimschg:anlage:4711-0815-K1:6e8bc430-9c3a-11d9-9669-0800200c9a66"
+  SET status = "archived", archived_at = NOW()
+  
+  # Schritt 2: Create in BY
+  INSERT Manifest {
+    urn: "urn:de:by:bimschg:anlage:4711-0815-K1:a7f2d581-3b1c-42e8-8f3d-1c9e0a7b4d2e",
+    manifestJson: {...},
+    created_at: NOW()
+  }
+  
+  # Schritt 3: Update Graph Edge (Veritas)
+  GRAPH.UPDATE_EDGE 
+  FROM Company:xyz 
+  TO ProxySite:new_location
+  EDGE_TYPE: OPERATES_AT
+
+COMMIT
+```
+
+2. **Saga-Pattern als Fallback** (wenn Themis Transactions nicht verfügbar)
 
 ```yaml
 # Beispiel: Standortwechsel-Saga

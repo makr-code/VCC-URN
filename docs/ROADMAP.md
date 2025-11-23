@@ -55,20 +55,22 @@
 **Ziel:** Erweiterung für Multi-Land-Szenarien (Pilot mit 2-3 Bundesländern)
 
 **Deliverables:**
-- ✅ GraphQL-API mit Apollo Federation-Support
+- ✅ **Themis AQL-API** (statt GraphQL) - VCC-native Query-Sprache
 - ✅ Redis-basierter Cache (ersetzt In-Memory)
-- ✅ Mutual TLS (mTLS) für Peer-Authentifizierung
+- ⏳ Mutual TLS (mTLS) für Peer-Authentifizierung (Phase 2b)
 - ✅ Batch-Resolution-Endpoint (`/api/v1/resolve/batch`)
-- ✅ Admin-Dashboard (Web-UI für Peer-Monitoring)
-- ✅ Service Discovery (optional: Consul/Kubernetes)
-- ✅ Contract Testing (Pact für API-Verträge)
+- ⏳ Admin-Dashboard (Web-UI für Peer-Monitoring) (Phase 2b)
+- ⏳ Service Discovery (optional: Consul/Kubernetes) (Phase 2b)
+- ⏳ Contract Testing (Pact für API-Verträge) (Phase 2b)
+
+**Hinweis:** GraphQL experimentell verfügbar, wird durch Themis AQL ersetzt ([ADR-0001](adr/0001-themis-aql-statt-graphql.md))
 
 **Priorität:** 🟡 MITTEL (für Pilot erforderlich)
 
 **Erfolgskriterien:**
 - Föderierte Auflösung über 3 Länder in <300ms (P95)
 - Cache-Hit-Rate >70%
-- GraphQL-Query-Latenz <100ms (lokal)
+- Themis AQL-Query-Latenz <100ms (lokal)
 
 ---
 
@@ -77,8 +79,8 @@
 **Ziel:** Vollständige Integration der 16 Bundesländer
 
 **Deliverables:**
-- ✅ Zentraler Föderations-Gateway (Apollo Router)
-- ✅ Saga-Orchestrator (Temporal.io) für transaktionale Konsistenz
+- ✅ **Themis Federation Gateway** (statt Apollo Router) - VCC-native Lösung
+- ✅ Themis Transactions / Saga-Orchestrator für transaktionale Konsistenz
 - ✅ Föderiertes IAM (SAML 2.0 + SCIM)
 - ✅ Open Policy Agent (OPA) für zentrale RBAC
 - ✅ End-to-End Distributed Tracing (OpenTelemetry + Jaeger)
@@ -87,7 +89,7 @@
 **Priorität:** 🟢 NIEDRIG (langfristige Vision)
 
 **Erfolgskriterien:**
-- Föderierte Query über 5+ Länder in <2 Sekunden
+- Föderierte AQL-Query über 5+ Länder in <2 Sekunden
 - Gateway-Uptime >99.9%
 - Saga-Success-Rate >99%
 
@@ -99,28 +101,33 @@
 ```
 FastAPI → SQLAlchemy → PostgreSQL/SQLite
    ↓
-httpx (Föderation) + TTL-Cache (In-Memory)
+httpx (Föderation) + Redis-Cache (optional, Fallback: In-Memory)
    ↓
-API-Key/OIDC (Auth)
+API-Key/OIDC (Auth) + Circuit Breaker + Rate Limiting
 ```
 
-### Phase 2
+### Phase 2 (Angepasst)
 ```
-FastAPI + Strawberry GraphQL → Redis-Cache
+FastAPI + Themis AQL (statt GraphQL) → Redis-Cache
    ↓
 mTLS (Peer-Auth) + Circuit Breaker
    ↓
 Admin-Dashboard (React/Vue.js)
 ```
 
-### Phase 3
+**Hinweis:** GraphQL optional verfügbar (experimentell), wird durch Themis AQL ersetzt
+
+### Phase 3 (Angepasst)
 ```
-Apollo Router (Gateway) → 16 Subgraphs (GraphQL)
+Themis Federation Gateway (statt Apollo Router) → 16 AQL-Endpunkte
    ↓
-Temporal (Saga) + OPA (Policy) + OpenTelemetry (Tracing)
+Themis Transactions / Temporal (Saga) + OPA (Policy) + OpenTelemetry (Tracing)
    ↓
-Keycloak (SAML + SCIM)
+Keycloak (SAML + SCIM) + Veritas Graph-DB Integration
 ```
+
+**Wichtig:** Themis AQL = VCC-native, on-premise, vendor-free (siehe [ADR-0001](adr/0001-themis-aql-statt-graphql.md))
+
 
 ---
 
