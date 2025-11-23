@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vcc-urn-config
+  namespace: default
+data:
+  URN_NID: "de"
+  URN_STATE_RE: "^[a-z]{2,3}$"
+  URN_CORS_ORIGINS: "*"
+  URN_AUTH_MODE: "none"
+  URN_LOG_LEVEL: "INFO"
+  URN_LOG_FORMAT: "json"
+  URN_FED_TIMEOUT: "3.0"
+  URN_FED_CACHE_TTL: "300"

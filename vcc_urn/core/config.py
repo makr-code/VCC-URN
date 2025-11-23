@@ -33,5 +33,8 @@ class Settings:
     allowed_domains: str = os.getenv("URN_ALLOWED_DOMAINS", "")
     allowed_obj_types: str = os.getenv("URN_ALLOWED_OBJ_TYPES", "")
     catalogs_json: str = os.getenv("URN_CATALOGS_JSON", "")
+    # Phase 1: Logging & Observability
+    log_level: str = os.getenv("URN_LOG_LEVEL", "INFO")
+    log_format: str = os.getenv("URN_LOG_FORMAT", "text")  # text | json
 
 settings = Settings()

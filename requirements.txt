@@ -12,3 +12,9 @@ python-jose[cryptography]==3.3.0
 ruff==0.6.9
 black==24.10.0
 mypy==1.11.2
+# Phase 1: Production Hardening
+prometheus-fastapi-instrumentator==7.0.0
+python-json-logger==2.0.7
+pybreaker==1.2.0
+tenacity==9.0.0
+slowapi==0.1.9
