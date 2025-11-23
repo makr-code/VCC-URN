@@ -154,8 +154,9 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 FROM python:3.11-alpine
+RUN adduser --disabled-password --gecos "" --uid 65534 nonroot
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY . /app
+COPY --chown=nonroot:nonroot . /app
 USER nonroot
 HEALTHCHECK CMD curl --fail http://localhost:8000/healthz || exit 1
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
@@ -440,12 +441,12 @@ saga: relocate_company_site
 steps:
   - service: nrw-urn-resolver
     action: archive_manifest
-    urn: urn:de:nrw:bimschg:anlage:4711-0815-K1:...
+    urn: urn:de:nrw:bimschg:anlage:4711-0815-K1:6e8bc430-9c3a-11d9-9669-0800200c9a66
     compensation: restore_manifest
 
   - service: by-urn-resolver
     action: create_manifest
-    urn: urn:de:by:bimschg:anlage:4711-0815-K1:...
+    urn: urn:de:by:bimschg:anlage:4711-0815-K1:a7f2d581-3b1c-42e8-8f3d-1c9e0a7b4d2e
     compensation: delete_manifest
 
   - service: nrw-graph-db
@@ -736,14 +737,15 @@ graph TD
     E --> F[Saga-Orchestrator]
     F --> G[16-Länder-Rollout]
     
-    style A fill:#90EE90
-    style D fill:#FFD700
-    style G fill:#FF6347
+    style A fill:#d4edda,stroke:#28a745,color:#000
+    style D fill:#fff3cd,stroke:#ffc107,color:#000
+    style G fill:#f8d7da,stroke:#dc3545,color:#000
 ```
 
-- **Grün:** Phase 1 (Foundation)
-- **Gelb:** Phase 2 (Evolution)
-- **Rot:** Phase 3 (Ecosystem)
+**Legende:**
+- **Grün (A):** Phase 1 - Foundation (Production Hardening)
+- **Gelb (D):** Phase 2 - Evolution (Federation Maturity)
+- **Rot (G):** Phase 3 - Ecosystem (16-Länder-Integration)
 
 ### 7.3 Quick Wins (< 3 Monate)
 
