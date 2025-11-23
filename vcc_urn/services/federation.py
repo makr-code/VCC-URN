@@ -6,11 +6,13 @@ from pybreaker import CircuitBreaker
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 from vcc_urn.config import settings
+from vcc_urn.core.redis_cache import get_redis_cache
 
 logger = logging.getLogger(__name__)
 
 
 class TTLCache:
+    """Fallback in-memory cache (used when Redis is disabled)"""
     def __init__(self, ttl_seconds: int = 300):
         self.ttl = ttl_seconds
         self._data: Dict[str, tuple[float, dict]] = {}
@@ -30,7 +32,9 @@ class TTLCache:
         self._data[key] = (time.time() + self.ttl, value)
 
 
-_cache = TTLCache(ttl_seconds=settings.fed_cache_ttl)
+# Phase 2: Use Redis cache if enabled, otherwise fallback to TTL cache
+_redis_cache = get_redis_cache()
+_fallback_cache = TTLCache(ttl_seconds=settings.fed_cache_ttl)
 
 # Circuit breaker for federation requests (Phase 1)
 # fail_max=5: Open circuit after 5 consecutive failures
@@ -73,12 +77,13 @@ def _fetch_from_peer(url: str, urn: str) -> Optional[dict]:
 
 def resolve_via_peer(urn: str, state: str) -> Optional[dict]:
     """
-    Resolve URN via peer with circuit breaker and retry logic (Phase 1)
+    Resolve URN via peer with circuit breaker and retry logic (Phase 1+2)
+    Uses Redis cache if enabled, otherwise in-memory TTL cache
     """
-    # Check cache first
-    manifest = _cache.get(urn)
+    # Check cache first (Redis or in-memory)
+    manifest = _redis_cache.get(urn)
     if manifest:
-        logger.info("Federation cache hit", extra={"urn": urn, "state": state})
+        logger.info("Federation cache hit (Redis)", extra={"urn": urn, "state": state})
         return manifest
     
     # Parse peers
@@ -98,7 +103,8 @@ def resolve_via_peer(urn: str, state: str) -> Optional[dict]:
         
         data = fetch_with_breaker()
         if data:
-            _cache.set(urn, data)
+            # Store in Redis cache
+            _redis_cache.set(urn, data, ttl=settings.fed_cache_ttl)
             logger.info("Federation resolved via peer", extra={
                 "urn": urn,
                 "state": state,
@@ -121,3 +127,57 @@ def resolve_via_peer(urn: str, state: str) -> Optional[dict]:
         })
     
     return None
+
+
+# Phase 2: Batch resolution
+def resolve_batch(urns: list[str]) -> Dict[str, Optional[dict]]:
+    """
+    Resolve multiple URNs efficiently (batch operation)
+    Returns dict mapping URN -> manifest (or None if not found)
+    """
+    results: Dict[str, Optional[dict]] = {}
+    
+    # Check cache first for all URNs
+    for urn in urns:
+        cached = _redis_cache.get(urn)
+        if cached:
+            results[urn] = cached
+            logger.debug("Batch cache hit", extra={"urn": urn})
+    
+    # Find URNs not in cache
+    uncached_urns = [urn for urn in urns if urn not in results]
+    
+    if not uncached_urns:
+        return results
+    
+    # Group by state for efficient peer requests
+    by_state: Dict[str, list[str]] = {}
+    peers = _parse_peers(settings.peers)
+    
+    for urn in uncached_urns:
+        try:
+            # Extract state from URN (format: urn:de:STATE:...)
+            parts = urn.split(":")
+            if len(parts) >= 3:
+                state = parts[2].lower()
+                if state not in by_state:
+                    by_state[state] = []
+                by_state[state].append(urn)
+        except Exception:
+            results[urn] = None
+    
+    # Resolve each state's URNs
+    for state, state_urns in by_state.items():
+        base = peers.get(state)
+        if not base:
+            for urn in state_urns:
+                results[urn] = None
+            continue
+        
+        # Fetch each URN from peer (could be parallelized further)
+        for urn in state_urns:
+            manifest = resolve_via_peer(urn, state)
+            results[urn] = manifest
+    
+    return results
+

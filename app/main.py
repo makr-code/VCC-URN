@@ -13,6 +13,15 @@ from vcc_urn.api.v1.endpoints import get_router as get_v1_router
 from vcc_urn.api.admin.endpoints import get_router as get_admin_router
 from vcc_urn.core.logging import logger
 
+# Phase 2: GraphQL (optional - import only if needed)
+try:
+    from strawberry.fastapi import GraphQLRouter
+    from vcc_urn.api.graphql.resolvers import schema as graphql_schema
+    GRAPHQL_AVAILABLE = True
+except ImportError:
+    GRAPHQL_AVAILABLE = False
+    logger.warning("GraphQL not available - install with: pip install strawberry-graphql[fastapi]")
+
 
 # Rate limiter setup
 limiter = Limiter(key_func=get_remote_address)
@@ -77,6 +86,14 @@ def get_service(db=Depends(get_db)):
 app.include_router(get_v1_router())
 app.include_router(get_admin_router())
 
+# Phase 2: GraphQL endpoint (optional)
+if GRAPHQL_AVAILABLE:
+    graphql_app = GraphQLRouter(graphql_schema)
+    app.include_router(graphql_app, prefix="/graphql")
+    logger.info("GraphQL API enabled at /graphql")
+else:
+    logger.info("GraphQL API disabled (dependency not installed)")
+
 
 def run():
     import uvicorn
@@ -87,7 +104,10 @@ def run():
 @app.get("/")
 @limiter.limit("100/minute")
 async def info(request: Request):
-    return {"service": "VCC URN resolver", "nid": settings.nid}
+    apis = ["REST /api/v1"]
+    if GRAPHQL_AVAILABLE:
+        apis.append("GraphQL /graphql")
+    return {"service": "VCC URN resolver", "nid": settings.nid, "apis": apis}
 
 
 @app.get("/healthz")

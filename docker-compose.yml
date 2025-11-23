@@ -21,8 +21,13 @@ services:
       # Logging
       URN_LOG_LEVEL: INFO
       URN_LOG_FORMAT: json
+      # Phase 2: Redis Cache (optional - comment out to disable)
+      URN_REDIS_ENABLED: "true"
+      URN_REDIS_URL: redis://redis:6379/0
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8000/healthz"]
@@ -50,5 +55,22 @@ services:
       retries: 10
     restart: unless-stopped
 
+  # Redis Cache (Phase 2: Optional - self-hosted, open-source)
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
 volumes:
   pgdata:
+  redisdata:
+
