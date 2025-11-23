@@ -1,5 +1,14 @@
 """
 GraphQL resolvers for VCC-URN
+
+⚠️ EXPERIMENTAL / DEPRECATED ⚠️
+
+This GraphQL implementation is EXPERIMENTAL and will be DEPRECATED in favor of Themis AQL.
+See: docs/adr/0001-themis-aql-statt-graphql.md
+
+Themis AQL is the VCC-native query language and should be used for all new development.
+This GraphQL API is provided for backward compatibility only and may be removed in future versions.
+
 Phase 2: Federation Evolution
 """
 import strawberry
