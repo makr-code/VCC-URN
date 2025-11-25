@@ -33,6 +33,20 @@ class SearchResponse(BaseModel):
     count: int
     results: List[SearchItem]
 
+# Phase 2: Batch Resolution
+class BatchResolveRequest(BaseModel):
+    urns: List[str] = Field(..., json_schema_extra={"example": ["urn:de:nrw:bimschg:anlage:4711:..."]})
+
+class BatchResolveResult(BaseModel):
+    urn: str
+    manifest: Optional[Dict[str, Any]] = None
+    found: bool
+
+class BatchResolveResponse(BaseModel):
+    results: List[BatchResolveResult]
+    total: int
+    found: int
+
 
 class AdminCatalogsSetRequest(BaseModel):
     catalogs: Dict[str, Dict[str, List[str]]]

@@ -6,10 +6,14 @@ from vcc_urn.schemas import (
     ValidateResponse,
     StoreRequest,
     SearchResponse,
+    BatchResolveRequest,
+    BatchResolveResponse,
+    BatchResolveResult,
 )
 from vcc_urn.service import URNService
 from vcc_urn.db import SessionLocal
 from vcc_urn.security import require_auth
+from vcc_urn.services.federation import resolve_batch
 
 
 def get_db():
@@ -60,6 +64,37 @@ def get_router() -> APIRouter:
     def resolve(urn: str = Query(...), svc: URNService = Depends(get_service)):
         try:
             return svc.resolve(urn)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
+
+    # Phase 2: Batch resolution endpoint
+    @router.post("/resolve/batch", response_model=BatchResolveResponse)
+    def resolve_batch_endpoint(req: BatchResolveRequest, svc: URNService = Depends(get_service)):
+        """
+        Resolve multiple URNs in a single request (Phase 2: Performance optimization)
+        Returns manifest for each URN or None if not found
+        """
+        try:
+            results_dict = resolve_batch(req.urns)
+            results = []
+            found_count = 0
+            
+            for urn in req.urns:
+                manifest = results_dict.get(urn)
+                is_found = manifest is not None
+                if is_found:
+                    found_count += 1
+                results.append(BatchResolveResult(
+                    urn=urn,
+                    manifest=manifest,
+                    found=is_found
+                ))
+            
+            return BatchResolveResponse(
+                results=results,
+                total=len(req.urns),
+                found=found_count
+            )
         except Exception as e:
             raise HTTPException(status_code=400, detail=str(e))
 
