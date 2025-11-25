@@ -15,7 +15,7 @@ from vcc_urn.api.admin.dashboard import get_dashboard_router  # Phase 2b
 from vcc_urn.core.logging import logger
 
 # Phase 2: GraphQL (optional - import only if needed)
-# ⚠️ EXPERIMENTAL / DEPRECATED - Use Themis AQL instead (see ADR-0001)
+# GraphQL API available alongside REST and Themis AQL
 try:
     from strawberry.fastapi import GraphQLRouter
     from vcc_urn.api.graphql.resolvers import schema as graphql_schema
@@ -93,11 +93,11 @@ app.include_router(get_dashboard_router())
 logger.info("Admin Dashboard enabled at /admin/dashboard")
 
 # Phase 2: GraphQL endpoint (optional)
-# ⚠️ EXPERIMENTAL / DEPRECATED - Use Themis AQL instead (see ADR-0001)
+# GraphQL API available alongside REST and Themis AQL
 if GRAPHQL_AVAILABLE:
     graphql_app = GraphQLRouter(graphql_schema)
     app.include_router(graphql_app, prefix="/graphql")
-    logger.warning("GraphQL API enabled at /graphql - DEPRECATED: Use Themis AQL instead (see docs/adr/0001-themis-aql-statt-graphql.md)")
+    logger.info("GraphQL API enabled at /graphql")
 else:
     logger.info("GraphQL API disabled (dependency not installed)")
 

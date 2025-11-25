@@ -1,80 +1,140 @@
-# GraphQL API - EXPERIMENTAL / DEPRECATED
+# GraphQL API
 
-⚠️ **DEPRECATED: This GraphQL implementation is experimental and will be removed in future versions.**
+GraphQL API for VCC-URN - Available alongside REST and Themis AQL APIs.
 
 ## Status
 
-**DEPRECATED in favor of Themis AQL**
+**✅ SUPPORTED** - GraphQL is a fully supported API for VCC-URN.
 
-See: [ADR-0001: Themis AQL statt GraphQL](../../docs/adr/0001-themis-aql-statt-graphql.md)
+## API Options
 
-## Why Deprecated?
+VCC-URN provides three API options:
 
-VCC has developed **Themis AQL** as the native query language for the VCC ecosystem. Themis AQL provides:
+1. **REST API** (`/api/v1/*`) - Traditional REST endpoints
+2. **GraphQL API** (`/graphql`) - Flexible query language (this API)
+3. **Themis AQL** (`/aql`) - VCC-native query language
 
-1. **VCC-native integration** with Veritas (Graph-DB), Covina, Clara
-2. **Föderale Optimierung** specifically for German federal structures
-3. **Souveränität** - VCC-owned, no dependency on external companies (Apollo)
-4. **DSGVO & BSI compliance** by design
-5. **On-premise & vendor-free** - 100% self-hostable
+Choose the API that best fits your use case.
 
-## Migration Path
+## Features
 
-**For new development:**
-- Use **Themis AQL** API (planned for Phase 2b)
-- Use **REST API** (`/api/v1/*`) for simple operations
+GraphQL provides:
 
-**For existing GraphQL users:**
-- GraphQL remains available for backward compatibility
-- Plan migration to Themis AQL when it becomes available
-- GraphQL may be removed in a future major version
+1. **Flexible queries** - Request only the fields you need
+2. **Strong typing** - Type-safe API with introspection
+3. **Single endpoint** - All operations via `/graphql`
+4. **GraphiQL interface** - Interactive API explorer
+5. **Open-Source** - Strawberry GraphQL (MIT License)
 
-## Current Status
+## Installation
 
-- **GraphQL endpoint**: `/graphql` (if strawberry-graphql installed)
-- **Availability**: Optional dependency with graceful degradation
-- **Support level**: Experimental - use at your own risk
-- **Removal timeline**: TBD (after Themis AQL implementation)
+GraphQL is optional. Install with:
+
+```bash
+pip install strawberry-graphql[fastapi]
+```
+
+## Endpoint
+
+- **GraphQL endpoint**: `/graphql`
+- **GraphiQL interface**: Available at `/graphql` in browser
+
+## Operations
+
+### Queries
+
+```graphql
+# Resolve a URN
+query {
+  resolveUrn(urn: "urn:de:nrw:bimschg:anlage:...") {
+    urn
+    manifestJson
+    createdAt
+    updatedAt
+  }
+}
+
+# Validate a URN
+query {
+  validateUrn(urn: "urn:de:nrw:bimschg:anlage:...") {
+    valid
+    reason
+    components {
+      nid
+      state
+      domain
+      objType
+      localAktenzeichen
+      uuid
+      version
+    }
+  }
+}
+
+# Search by UUID
+query {
+  searchByUuid(uuid: "abc123", limit: 10, offset: 0) {
+    urn
+    manifestJson
+  }
+}
+
+# Batch resolve multiple URNs
+query {
+  resolveBatch(urns: ["urn:de:nrw:...", "urn:de:by:..."]) {
+    urn
+    manifestJson
+  }
+}
+```
+
+### Mutations
+
+```graphql
+# Generate a new URN
+mutation {
+  generateUrn(input: {
+    state: "nrw"
+    domain: "bimschg"
+    objType: "anlage"
+    localAktenzeichen: "2024-001"
+    store: true
+  }) {
+    urn
+    components {
+      nid
+      state
+      domain
+      objType
+      localAktenzeichen
+      uuid
+    }
+  }
+}
+
+# Store a manifest
+mutation {
+  storeManifest(
+    urn: "urn:de:nrw:bimschg:anlage:..."
+    manifest: { title: "Example", data: "..." }
+  ) {
+    urn
+    manifestJson
+  }
+}
+```
 
 ## Files
 
-- `schema.py` - GraphQL type definitions (DEPRECATED)
-- `resolvers.py` - GraphQL query/mutation resolvers (DEPRECATED)
+- `schema.py` - GraphQL type definitions
+- `resolvers.py` - GraphQL query/mutation resolvers
 
-## Alternatives
+## See Also
 
-### REST API (Recommended for now)
-
-```bash
-# Generate URN
-POST /api/v1/generate
-
-# Resolve URN
-GET /api/v1/resolve?urn=...
-
-# Batch resolve
-POST /api/v1/resolve/batch
-```
-
-### Themis AQL (Coming in Phase 2b)
-
-```aql
-# Resolve URN
-QUERY resolveURN(urn: "urn:de:nrw:bimschg:anlage:...")
-
-# Batch resolve
-QUERY resolveBatch(urns: ["urn:de:nrw:...", "urn:de:by:..."])
-```
-
-## Support
-
-For questions or migration assistance:
-- See [ROADMAP.md](../../docs/ROADMAP.md) for Themis AQL timeline
-- See [ADR-0001](../../docs/adr/0001-themis-aql-statt-graphql.md) for decision rationale
-- Open an issue on GitHub for migration support
+- [REST API Documentation](/api/v1/docs)
+- [Themis AQL Documentation](/aql/docs)
+- [ROADMAP.md](../../docs/ROADMAP.md)
 
 ---
 
-**Last Updated:** 2025-11-23  
-**Deprecation Date:** 2025-11-23  
-**Planned Removal:** TBD (after Themis AQL implementation)
+**Last Updated:** 2025-11-25

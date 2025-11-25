@@ -1,18 +1,25 @@
-# Architecture Decision Record: Themis AQL statt GraphQL
+# Architecture Decision Record: Themis AQL als primäre VCC-native API
 
 **Status:** Akzeptiert  
 **Datum:** 2025-11-23  
-**Entscheidung:** Verwendung von Themis AQL anstelle von GraphQL für föderierte Abfragen
+**Aktualisiert:** 2025-11-25  
+**Entscheidung:** Themis AQL als primäre VCC-native Query-Sprache, GraphQL als parallele API
 
 ---
 
 ## Kontext
 
-Für Phase 2 und 3 der VCC-URN-Entwicklung wurde ursprünglich GraphQL (Apollo Federation) als Query-Sprache für föderierte Abfragen geplant. Das VCC-Projekt hat jedoch mit **Themis AQL** eine eigene, speziell für föderale Verwaltungsstrukturen entwickelte Alternative.
+Für Phase 2 und 3 der VCC-URN-Entwicklung wurde ursprünglich GraphQL (Apollo Federation) als einzige Query-Sprache für föderierte Abfragen geplant. Das VCC-Projekt hat jedoch mit **Themis AQL** eine eigene, speziell für föderale Verwaltungsstrukturen entwickelte Alternative.
 
 ## Entscheidung
 
-**Wir verwenden Themis AQL anstelle von GraphQL** für alle föderierten Abfragen und die Query-API.
+**Wir bieten drei parallele APIs an:**
+
+1. **REST API** (`/api/v1/*`) - Traditionelle REST-Endpunkte
+2. **GraphQL API** (`/graphql`) - Flexible Query-Sprache
+3. **Themis AQL** (`/aql`) - VCC-native Query-Sprache
+
+Alle drei APIs sind vollständig unterstützt und können je nach Anwendungsfall gewählt werden.
 
 ## Begründung
 
@@ -38,86 +45,92 @@ Für Phase 2 und 3 der VCC-URN-Entwicklung wurde ursprünglich GraphQL (Apollo F
    - Selbst hostbar
    - Keine externen Abhängigkeiten
 
-### Nachteile von GraphQL (die AQL vermeidet)
+### Vorteile von GraphQL
 
-1. **Vendor-Abhängigkeit**
-   - Apollo Federation ist kommerzielles Produkt (Elastic License 2.0)
-   - Router hat Einschränkungen in freier Version
-   - Mögliche zukünftige Lizenzänderungen (wie bei Elasticsearch)
+1. **Breite Adoption**
+   - Bekannte Technologie mit großer Community
+   - Umfangreiches Tooling (GraphiQL, Apollo Client, etc.)
+   - Viele Entwickler haben Erfahrung damit
 
-2. **Komplexität**
-   - GraphQL Federation erfordert komplexes Setup
-   - N+1-Problem erfordert DataLoader-Pattern
-   - Steile Lernkurve
+2. **Flexible Abfragen**
+   - Client wählt benötigte Felder
+   - Starke Typisierung mit Introspection
+   - Gut für Frontend-Entwicklung
 
-3. **Nicht VCC-nativ**
-   - Externe Technologie, nicht auf VCC-Bedürfnisse zugeschnitten
-   - Zusätzlicher Integrationsaufwand
+3. **Open-Source Implementation**
+   - Strawberry GraphQL (MIT License)
+   - Kein Vendor-Lock-In
 
 ## Konsequenzen
 
 ### Positiv
 
-- ✅ Einheitliche Query-Sprache im gesamten VCC-Ökosystem
-- ✅ Bessere Integration mit Veritas, Covina, Clara
-- ✅ Volle Kontrolle über Spezifikation
-- ✅ Optimiert für föderale Verwaltungsstrukturen
+- ✅ Drei API-Optionen für verschiedene Anwendungsfälle
+- ✅ VCC-native Integration über Themis AQL
+- ✅ Bekannte Technologie (GraphQL) für externe Partner
+- ✅ Einfache REST API für Basis-Operationen
 - ✅ Keine Vendor-Lock-In-Risiken
-- ✅ DSGVO & BSI-konform by design
+- ✅ DSGVO & BSI-konform
 
 ### Negativ
 
+- ⚠️ Drei APIs erfordern Wartung
+- ⚠️ Dokumentation für drei APIs
 - ⚠️ Themis AQL ist weniger bekannt als GraphQL
-- ⚠️ Kleinere Community (VCC-fokussiert)
-- ⚠️ Weniger Tooling-Unterstützung (noch)
 
 ### Neutral
 
-- 🔄 GraphQL-Implementierung bleibt optional verfügbar (backward compatibility)
-- 🔄 Migration von REST zu AQL (statt zu GraphQL)
-- 🔄 Dokumentation muss aktualisiert werden
+- 🔄 Entwickler wählen die passende API
+- 🔄 GraphQL für externe Partner, Themis AQL für VCC-interne Systeme
+- 🔄 REST für einfache Integrationen
+
+## API-Empfehlungen
+
+| Anwendungsfall | Empfohlene API |
+|---------------|----------------|
+| Einfache CRUD-Operationen | REST API |
+| Frontend-Entwicklung | GraphQL |
+| VCC-interne Systeme | Themis AQL |
+| Veritas Graph-DB Integration | Themis AQL |
+| Externe Partner | GraphQL oder REST |
+| Batch-Operationen | Alle drei |
 
 ## Implementierung
 
-### Phase 2 (Angepasst)
+### Phase 2 (Implementiert)
 
-**Statt GraphQL:**
-- ❌ ~~Strawberry GraphQL~~
-- ❌ ~~Apollo Federation~~
+**GraphQL:**
+- ✅ Strawberry GraphQL (MIT License)
+- ✅ Endpunkt: `/graphql`
+- ✅ GraphiQL Interface
 
-**Mit Themis AQL:**
+**Themis AQL:**
 - ✅ Themis AQL Parser/Executor Integration
-- ✅ AQL-Endpunkt: `/aql` oder `/api/v2/aql`
+- ✅ Endpunkt: `/aql`
 - ✅ AQL-Schema für URN-Operationen
-- ✅ Föderation via Themis Query Routing
 
-### Phase 3 (Angepasst)
+### Phase 3 (Implementiert)
 
-**Statt Apollo Router:**
-- ❌ ~~Apollo Router (Gateway)~~
-
-**Mit Themis:**
-- ✅ Themis Federation Gateway
-- ✅ AQL Query Federation über 16 Bundesländer
-- ✅ Themis-basierte Transaktionen (statt Saga-Pattern)
-
-## Alternative erwogen
-
-**GraphQL (Apollo Federation)** wurde erwogen, aber aus oben genannten Gründen zugunsten von Themis AQL verworfen.
+**Federation:**
+- ✅ Themis Federation Gateway für VCC-interne Föderation
+- ✅ GraphQL für externe Partner verfügbar
+- ✅ REST API bleibt als Basis-Option
 
 ## Referenzen
 
 - Themis Projekt: (intern)
 - VCC-Ökosystem: Veritas, Covina, Clara
 - Verwandt: ThemisDB (Copyright-Inhaber)
+- GraphQL: [graphql.org](https://graphql.org)
+- Strawberry GraphQL: [strawberry.rocks](https://strawberry.rocks)
 
 ## Aktionen
 
-- [x] GraphQL als optional belassen (bereits implementiert)
-- [ ] Themis AQL Integration planen (Phase 2b)
-- [ ] Dokumentation aktualisieren (development-strategy.md, ROADMAP.md)
+- [x] GraphQL implementiert (Strawberry)
+- [x] Themis AQL Client implementiert
+- [x] REST API vollständig
+- [x] Dokumentation aktualisiert
 - [x] ADR dokumentieren (dieses Dokument)
-- [ ] Team informieren
 
 ---
 

@@ -55,7 +55,8 @@
 **Ziel:** Erweiterung für Multi-Land-Szenarien (Pilot mit 2-3 Bundesländern)
 
 **Deliverables:**
-- ✅ **Themis AQL-API** (statt GraphQL) - VCC-native Query-Sprache
+- ✅ **Themis AQL-API** - VCC-native Query-Sprache
+- ✅ **GraphQL-API** - Flexible Query-Sprache (`/graphql`)
 - ✅ Redis-basierter Cache (ersetzt In-Memory)
 - ✅ **Mutual TLS (mTLS)** für Peer-Authentifizierung - konfigurierbar, on-premise
 - ✅ Batch-Resolution-Endpoint (`/api/v1/resolve/batch`)
@@ -63,7 +64,7 @@
 - ✅ **Service Discovery** (Kubernetes DNS + Manual) - `vcc_urn/core/service_discovery.py`
 - ✅ **Contract Testing** (Pact) - `vcc_urn/testing/contract_testing.py`
 
-**Hinweis:** GraphQL experimentell verfügbar, wird durch Themis AQL ersetzt ([ADR-0001](adr/0001-themis-aql-statt-graphql.md))
+**Hinweis:** GraphQL und Themis AQL sind parallel verfügbar ([ADR-0001](adr/0001-themis-aql-statt-graphql.md))
 
 **Priorität:** 🟡 MITTEL (für Pilot erforderlich)
 
@@ -110,14 +111,14 @@ API-Key/OIDC (Auth) + Circuit Breaker + Rate Limiting
 
 ### Phase 2 (Angepasst)
 ```
-FastAPI + Themis AQL (statt GraphQL) → Redis-Cache
+FastAPI + Themis AQL + GraphQL → Redis-Cache
    ↓
 mTLS (Peer-Auth) + Circuit Breaker
    ↓
-Admin-Dashboard (React/Vue.js)
+Admin-Dashboard (Web-UI)
 ```
 
-**Hinweis:** GraphQL optional verfügbar (experimentell), wird durch Themis AQL ersetzt
+**Hinweis:** Drei API-Optionen: REST, GraphQL, Themis AQL
 
 ### Phase 3 (Angepasst)
 ```
@@ -128,7 +129,7 @@ Themis Transactions / Temporal (Saga) + OPA (Policy) + OpenTelemetry (Tracing)
 Keycloak (SAML + SCIM) + Veritas Graph-DB Integration
 ```
 
-**Wichtig:** Themis AQL = VCC-native, on-premise, vendor-free (siehe [ADR-0001](adr/0001-themis-aql-statt-graphql.md))
+**Wichtig:** Drei API-Optionen: REST, GraphQL, Themis AQL - alle on-premise, vendor-free (siehe [ADR-0001](adr/0001-themis-aql-statt-graphql.md))
 
 
 ---
