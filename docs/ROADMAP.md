@@ -60,7 +60,7 @@
 - ✅ **Mutual TLS (mTLS)** für Peer-Authentifizierung - konfigurierbar, on-premise
 - ✅ Batch-Resolution-Endpoint (`/api/v1/resolve/batch`)
 - ✅ **Admin-Dashboard** (Web-UI für Peer-Monitoring) - `/admin/dashboard`
-- ⏳ Service Discovery (optional: Consul/Kubernetes)
+- ✅ **Service Discovery** (Kubernetes DNS + Manual) - `vcc_urn/core/service_discovery.py`
 - ⏳ Contract Testing (Pact für API-Verträge)
 
 **Hinweis:** GraphQL experimentell verfügbar, wird durch Themis AQL ersetzt ([ADR-0001](adr/0001-themis-aql-statt-graphql.md))
@@ -81,10 +81,10 @@
 **Deliverables:**
 - ✅ **Themis Federation Gateway** (statt Apollo Router) - VCC-native Lösung
 - ✅ Themis Transactions / Saga-Orchestrator für transaktionale Konsistenz
-- ✅ Föderiertes IAM (SAML 2.0 + SCIM)
-- ✅ Open Policy Agent (OPA) für zentrale RBAC
-- ✅ End-to-End Distributed Tracing (OpenTelemetry + Jaeger)
-- ✅ 16 Bundesländer angebunden
+- ✅ **Föderiertes IAM** (SAML 2.0 + SCIM) - `vcc_urn/core/federated_identity.py` (Grundgerüst)
+- ✅ **Open Policy Agent (OPA)** für zentrale RBAC - `vcc_urn/core/opa.py` (Grundgerüst)
+- ✅ **Distributed Tracing** (OpenTelemetry + Jaeger) - `vcc_urn/core/tracing.py` (Grundgerüst)
+- ⏳ 16 Bundesländer angebunden
 
 **Priorität:** 🟢 NIEDRIG (langfristige Vision)
 

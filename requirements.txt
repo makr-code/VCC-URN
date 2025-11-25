@@ -20,3 +20,10 @@ slowapi==0.1.9
 # Phase 2: Federation Evolution
 strawberry-graphql[fastapi]==0.242.0
 redis==5.0.1
+# Phase 3: Föderiertes Ökosystem (optional - install for distributed tracing)
+# opentelemetry-api==1.27.0
+# opentelemetry-sdk==1.27.0
+# opentelemetry-instrumentation-fastapi==0.48b0
+# opentelemetry-exporter-otlp-proto-grpc==1.27.0
+# Note: OPA and SAML dependencies are optional and installed as needed
+# python3-saml==1.16.0  # For SAML 2.0 support
