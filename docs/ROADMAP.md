@@ -61,7 +61,7 @@
 - ✅ Batch-Resolution-Endpoint (`/api/v1/resolve/batch`)
 - ✅ **Admin-Dashboard** (Web-UI für Peer-Monitoring) - `/admin/dashboard`
 - ✅ **Service Discovery** (Kubernetes DNS + Manual) - `vcc_urn/core/service_discovery.py`
-- ⏳ Contract Testing (Pact für API-Verträge)
+- ✅ **Contract Testing** (Pact) - `vcc_urn/testing/contract_testing.py`
 
 **Hinweis:** GraphQL experimentell verfügbar, wird durch Themis AQL ersetzt ([ADR-0001](adr/0001-themis-aql-statt-graphql.md))
 
@@ -79,12 +79,14 @@
 **Ziel:** Vollständige Integration der 16 Bundesländer
 
 **Deliverables:**
-- ✅ **Themis Federation Gateway** (statt Apollo Router) - VCC-native Lösung
-- ✅ Themis Transactions / Saga-Orchestrator für transaktionale Konsistenz
-- ✅ **Föderiertes IAM** (SAML 2.0 + SCIM) - `vcc_urn/core/federated_identity.py` (Grundgerüst)
-- ✅ **Open Policy Agent (OPA)** für zentrale RBAC - `vcc_urn/core/opa.py` (Grundgerüst)
-- ✅ **Distributed Tracing** (OpenTelemetry + Jaeger) - `vcc_urn/core/tracing.py` (Grundgerüst)
-- ⏳ 16 Bundesländer angebunden
+- ✅ **Themis Federation Gateway** (statt Apollo Router) - `vcc_urn/integrations/themis_gateway.py`
+- ✅ **Themis Transactions / Saga-Orchestrator** - `vcc_urn/integrations/themis_transactions.py`
+- ✅ **Themis AQL Client** - `vcc_urn/integrations/themis_aql.py`
+- ✅ **Veritas Graph-DB Integration** - `vcc_urn/integrations/veritas.py`
+- ✅ **Föderiertes IAM** (SAML 2.0 + SCIM) - `vcc_urn/core/federated_identity.py`
+- ✅ **Open Policy Agent (OPA)** für zentrale RBAC - `vcc_urn/core/opa.py`
+- ✅ **Distributed Tracing** (OpenTelemetry + Jaeger) - `vcc_urn/core/tracing.py`
+- ⏳ 16 Bundesländer angebunden (Deployment-Phase)
 
 **Priorität:** 🟢 NIEDRIG (langfristige Vision)
 
