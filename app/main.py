@@ -11,6 +11,7 @@ from vcc_urn.db import init_db, SessionLocal
 from vcc_urn.config import settings
 from vcc_urn.api.v1.endpoints import get_router as get_v1_router
 from vcc_urn.api.admin.endpoints import get_router as get_admin_router
+from vcc_urn.api.admin.dashboard import get_dashboard_router  # Phase 2b
 from vcc_urn.core.logging import logger
 
 # Phase 2: GraphQL (optional - import only if needed)
@@ -86,6 +87,10 @@ def get_service(db=Depends(get_db)):
 
 app.include_router(get_v1_router())
 app.include_router(get_admin_router())
+
+# Phase 2b: Admin Dashboard for peer monitoring
+app.include_router(get_dashboard_router())
+logger.info("Admin Dashboard enabled at /admin/dashboard")
 
 # Phase 2: GraphQL endpoint (optional)
 # ⚠️ EXPERIMENTAL / DEPRECATED - Use Themis AQL instead (see ADR-0001)

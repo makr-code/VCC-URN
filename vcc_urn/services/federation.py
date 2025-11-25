@@ -7,6 +7,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_excep
 
 from vcc_urn.config import settings
 from vcc_urn.core.redis_cache import get_redis_cache
+from vcc_urn.core.mtls import get_mtls_config
 
 logger = logging.getLogger(__name__)
 
@@ -65,8 +66,26 @@ def _parse_peers(peers_str: str) -> Dict[str, str]:
     reraise=True
 )
 def _fetch_from_peer(url: str, urn: str) -> Optional[dict]:
-    """Fetch manifest from peer with retry logic"""
-    with httpx.Client(timeout=settings.fed_timeout) as client:
+    """
+    Fetch manifest from peer with retry logic and mTLS support (Phase 2b)
+    
+    Uses mTLS if configured, otherwise falls back to standard HTTPS
+    """
+    mtls_config = get_mtls_config()
+    
+    # Configure httpx client with mTLS if enabled
+    client_kwargs = {
+        "timeout": settings.fed_timeout,
+        "verify": mtls_config.get_httpx_verify(),
+    }
+    
+    # Add client certificate for mTLS
+    cert = mtls_config.get_httpx_cert()
+    if cert:
+        client_kwargs["cert"] = cert
+        logger.debug("Using mTLS for federation request", extra={"url": url})
+    
+    with httpx.Client(**client_kwargs) as client:
         resp = client.get(url, params={"urn": urn})
         if resp.status_code == 200:
             data = resp.json()

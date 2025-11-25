@@ -57,11 +57,11 @@
 **Deliverables:**
 - ✅ **Themis AQL-API** (statt GraphQL) - VCC-native Query-Sprache
 - ✅ Redis-basierter Cache (ersetzt In-Memory)
-- ⏳ Mutual TLS (mTLS) für Peer-Authentifizierung (Phase 2b)
+- ✅ **Mutual TLS (mTLS)** für Peer-Authentifizierung - konfigurierbar, on-premise
 - ✅ Batch-Resolution-Endpoint (`/api/v1/resolve/batch`)
-- ⏳ Admin-Dashboard (Web-UI für Peer-Monitoring) (Phase 2b)
-- ⏳ Service Discovery (optional: Consul/Kubernetes) (Phase 2b)
-- ⏳ Contract Testing (Pact für API-Verträge) (Phase 2b)
+- ✅ **Admin-Dashboard** (Web-UI für Peer-Monitoring) - `/admin/dashboard`
+- ⏳ Service Discovery (optional: Consul/Kubernetes)
+- ⏳ Contract Testing (Pact für API-Verträge)
 
 **Hinweis:** GraphQL experimentell verfügbar, wird durch Themis AQL ersetzt ([ADR-0001](adr/0001-themis-aql-statt-graphql.md))
 
