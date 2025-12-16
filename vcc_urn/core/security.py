@@ -4,6 +4,7 @@ from vcc_urn.config import settings
 from jose import jwt
 import httpx
 import time
+import secrets
 
 
 def _parse_keys(keys: str) -> List[str]:
@@ -32,6 +33,20 @@ def _parse_keys_map(keys: str) -> Dict[str, List[str]]:
             roles_list = []
         out[key.strip()] = roles_list
     return out
+
+
+def _constant_time_compare(a: str, b: str) -> bool:
+    """
+    Constant-time string comparison to prevent timing attacks.
+    
+    Args:
+        a: First string
+        b: Second string
+        
+    Returns:
+        True if strings are equal, False otherwise
+    """
+    return secrets.compare_digest(a.encode('utf-8'), b.encode('utf-8'))
 
 
 _jwks_cache: Dict[str, Any] = {"expires": 0.0, "keys": None}
@@ -122,10 +137,21 @@ async def require_auth(
         allowed = list(allowed_map.keys())
         if not allowed:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="auth misconfigured: no API keys configured")
-        if x_api_key is None or x_api_key not in allowed:
+        if x_api_key is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid or missing API key")
-        roles = allowed_map.get(x_api_key, []) or ["api-key"]
-        return {"sub": f"api-key:{x_api_key}", "mode": mode, "roles": roles}
+        
+        # Use constant-time comparison to prevent timing attacks
+        valid_key = None
+        for key in allowed:
+            if _constant_time_compare(x_api_key, key):
+                valid_key = key
+                break
+        
+        if valid_key is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid or missing API key")
+        
+        roles = allowed_map.get(valid_key, []) or ["api-key"]
+        return {"sub": f"api-key:{valid_key}", "mode": mode, "roles": roles}
     if mode == "oidc":
         if not authorization or not authorization.lower().startswith("bearer "):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="missing bearer token")

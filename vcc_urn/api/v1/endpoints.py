@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from vcc_urn.schemas import (
     GenerateRequest,
     GenerateResponse,
@@ -14,6 +14,8 @@ from vcc_urn.service import URNService
 from vcc_urn.db import SessionLocal
 from vcc_urn.security import require_auth
 from vcc_urn.services.federation import resolve_batch
+from vcc_urn.core.validation import validate_batch_size, sanitize_log_value
+from vcc_urn.core.logging import logger
 
 
 def get_db():
@@ -44,8 +46,25 @@ def get_router() -> APIRouter:
                 store=payload.store,
             )
             return GenerateResponse(urn=urn)
+        except ValueError as e:
+            # Client error - return 400 with safe error message
+            logger.warning("URN generation validation failed", extra={
+                "state": sanitize_log_value(payload.state),
+                "domain": sanitize_log_value(payload.domain),
+                "error": sanitize_log_value(str(e))
+            })
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
         except Exception as e:
-            raise HTTPException(status_code=400, detail=str(e))
+            # Server error - return 500 without exposing internal details
+            logger.error("URN generation failed", extra={
+                "state": sanitize_log_value(payload.state),
+                "domain": sanitize_log_value(payload.domain),
+                "error": sanitize_log_value(str(e))
+            })
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Internal server error during URN generation"
+            )
 
     @router.post("/validate", response_model=ValidateResponse)
     def validate(payload: ValidateRequest, svc: URNService = Depends(get_service)):
@@ -57,15 +76,45 @@ def get_router() -> APIRouter:
         try:
             svc.store_manifest(req.urn, req.manifest)
             return {"status": "ok", "urn": req.urn}
+        except ValueError as e:
+            # Client error - return 400 with safe error message
+            logger.warning("Manifest store validation failed", extra={
+                "urn": sanitize_log_value(req.urn),
+                "error": sanitize_log_value(str(e))
+            })
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
         except Exception as e:
-            raise HTTPException(status_code=400, detail=str(e))
+            # Server error - return 500 without exposing internal details
+            logger.error("Manifest store failed", extra={
+                "urn": sanitize_log_value(req.urn),
+                "error": sanitize_log_value(str(e))
+            })
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Internal server error during manifest storage"
+            )
 
     @router.get("/resolve")
     def resolve(urn: str = Query(...), svc: URNService = Depends(get_service)):
         try:
             return svc.resolve(urn)
+        except ValueError as e:
+            # Client error - return 400 with safe error message
+            logger.warning("URN resolution validation failed", extra={
+                "urn": sanitize_log_value(urn),
+                "error": sanitize_log_value(str(e))
+            })
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
         except Exception as e:
-            raise HTTPException(status_code=400, detail=str(e))
+            # Server error - return 500 without exposing internal details
+            logger.error("URN resolution failed", extra={
+                "urn": sanitize_log_value(urn),
+                "error": sanitize_log_value(str(e))
+            })
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Internal server error during URN resolution"
+            )
 
     # Phase 2: Batch resolution endpoint
     @router.post("/resolve/batch", response_model=BatchResolveResponse)
@@ -75,6 +124,9 @@ def get_router() -> APIRouter:
         Returns manifest for each URN or None if not found
         """
         try:
+            # Validate batch size to prevent DoS
+            validate_batch_size(req.urns)
+            
             results_dict = resolve_batch(req.urns)
             results = []
             found_count = 0
@@ -95,8 +147,23 @@ def get_router() -> APIRouter:
                 total=len(req.urns),
                 found=found_count
             )
+        except ValueError as e:
+            # Client error - return 400 with safe error message
+            logger.warning("Batch resolution validation failed", extra={
+                "batch_size": len(req.urns),
+                "error": sanitize_log_value(str(e))
+            })
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
         except Exception as e:
-            raise HTTPException(status_code=400, detail=str(e))
+            # Server error - return 500 without exposing internal details
+            logger.error("Batch resolution failed", extra={
+                "batch_size": len(req.urns),
+                "error": sanitize_log_value(str(e))
+            })
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Internal server error during batch resolution"
+            )
 
     @router.get("/search", response_model=SearchResponse)
     def search(
@@ -108,7 +175,22 @@ def get_router() -> APIRouter:
         try:
             results = svc.search_by_uuid(uuid, limit=limit, offset=offset)
             return {"count": len(results), "results": results}
+        except ValueError as e:
+            # Client error - return 400 with safe error message
+            logger.warning("Search validation failed", extra={
+                "uuid": sanitize_log_value(uuid),
+                "error": sanitize_log_value(str(e))
+            })
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
         except Exception as e:
-            raise HTTPException(status_code=400, detail=str(e))
+            # Server error - return 500 without exposing internal details
+            logger.error("Search failed", extra={
+                "uuid": sanitize_log_value(uuid),
+                "error": sanitize_log_value(str(e))
+            })
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Internal server error during search"
+            )
 
     return router

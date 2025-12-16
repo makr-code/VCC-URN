@@ -13,6 +13,7 @@ from vcc_urn.api.v1.endpoints import get_router as get_v1_router
 from vcc_urn.api.admin.endpoints import get_router as get_admin_router
 from vcc_urn.api.admin.dashboard import get_dashboard_router  # Phase 2b
 from vcc_urn.core.logging import logger
+from vcc_urn.core.security_middleware import SecurityHeadersMiddleware
 
 # Phase 2: GraphQL (optional - import only if needed)
 # GraphQL API available alongside REST and Themis AQL
@@ -40,7 +41,12 @@ async def lifespan(app: FastAPI):
     logger.info("Shutting down VCC-URN Resolver")
 
 
-app = FastAPI(title="VCC URN Resolver (OOP)", version="0.1.0", lifespan=lifespan)
+app = FastAPI(
+    title="VCC URN Resolver (OOP)", 
+    version="0.2.0",
+    description="Production-ready URN resolver with comprehensive security features",
+    lifespan=lifespan
+)
 
 # Add rate limiter state
 app.state.limiter = limiter
@@ -48,6 +54,14 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # CORS
 origins_cfg = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
+# Security: Only allow wildcard CORS in development (auth_mode=none)
+# In production, CORS should be explicitly configured
+if origins_cfg == ["*"] and settings.auth_mode != "none":
+    logger.warning(
+        "Wildcard CORS is enabled with authentication - this may be a security risk. "
+        "Consider configuring specific origins in URN_CORS_ORIGINS."
+    )
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"] if origins_cfg == ["*"] else origins_cfg,
@@ -55,6 +69,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Security headers middleware
+# Enable HSTS only if deployed with HTTPS (check via environment variable)
+enable_hsts = settings.auth_mode != "none"  # Enable HSTS in production (when auth is enabled)
+app.add_middleware(SecurityHeadersMiddleware, enable_hsts=enable_hsts)
 
 # Prometheus metrics (Phase 1)
 instrumentator = Instrumentator(

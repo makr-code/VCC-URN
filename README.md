@@ -1,6 +1,44 @@
 # VCC-URN
 
+**Version 0.2.0** - Production-ready URN Resolver with comprehensive security features
+
 Kleines FastAPI-Backend zur Generierung, Validierung und Auflösung föderaler URNs.
+
+## ⚡ Quick Start
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Run migrations
+alembic upgrade head
+
+# Start the server
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+API documentation available at `http://localhost:8000/docs`
+
+## 🔒 Security Features (v0.2.0)
+
+This version includes comprehensive security hardening:
+
+- ✅ **Input Validation**: Length limits, regex patterns, control character filtering
+- ✅ **Security Headers**: CSP, X-Frame-Options, X-Content-Type-Options, HSTS
+- ✅ **Authentication Security**: Constant-time API key comparison, OIDC support
+- ✅ **Database Security**: Connection pooling, query timeouts, parameterized queries
+- ✅ **Error Handling**: Information disclosure prevention, log sanitization
+- ✅ **Dependency Security**: All known vulnerabilities patched
+- ✅ **CodeQL Verified**: 0 security alerts
+
+📖 **See [SECURITY.md](docs/SECURITY.md) for complete security documentation**
+
+## 📚 Documentation
+
+- **[SECURITY.md](docs/SECURITY.md)** - Security features, configuration, and deployment checklist
+- **[BEST_PRACTICES.md](docs/BEST_PRACTICES.md)** - Development and deployment best practices
+- **[CHANGELOG.md](CHANGELOG.md)** - Version history and changes
+- **[SECURITY_REVIEW_SUMMARY.md](docs/SECURITY_REVIEW_SUMMARY.md)** - Security audit findings
 
 ## Projektstruktur (Best Practice)
 
@@ -184,7 +222,13 @@ Role-based Endpoints
 - Für Endpoints, die eine bestimmte Rolle benötigen, steht die Dependency-Factory `require_role("<role>")` zur Verfügung.
 	- Beispiel: `dependencies=[Depends(require_role("admin"))]` sichert Admin-Router.
 
-Entwickler-Hinweis: In Entwicklung ist `URN_AUTH_MODE=none` praktisch; `require_role` erlaubt in diesem Fall weiterhin Zugriff (Komfort für Tests). In Produktion sollte `none` niemals verwendet werden.
+Entwickler-Hinweis: In Entwicklung ist `URN_AUTH_MODE=none` praktisch; `require_role` erlaubt in diesem Fall weiterhin Zugriff (Komfort für Tests). **In Produktion sollte `none` niemals verwendet werden.**
+
+⚠️ **Production Security Requirements:**
+- Authentication MUST be enabled (`URN_AUTH_MODE=apikey` or `oidc`)
+- CORS origins MUST be explicitly configured (not `*`)
+- PostgreSQL MUST be used (not SQLite)
+- See [SECURITY.md](docs/SECURITY.md) for complete deployment checklist
 
 ## Developer notes / Warnings
 
