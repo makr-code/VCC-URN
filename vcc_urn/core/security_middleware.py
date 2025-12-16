@@ -6,6 +6,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 from typing import Callable
+import os
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -20,6 +21,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     - Content-Security-Policy: Restrict resource loading
     - Referrer-Policy: Control referrer information
     - Permissions-Policy: Restrict browser features
+    
+    Note: CSP uses 'unsafe-inline' for development (Swagger UI compatibility).
+    In production, consider using nonce-based or hash-based CSP.
     """
     
     def __init__(self, app, enable_hsts: bool = False, hsts_max_age: int = 31536000):
@@ -34,6 +38,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self.enable_hsts = enable_hsts
         self.hsts_max_age = hsts_max_age
+        # Detect if running with Swagger UI enabled (development)
+        self.is_dev = os.getenv("URN_AUTH_MODE", "none") == "none"
     
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         response = await call_next(request)
@@ -52,18 +58,34 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             response.headers["Strict-Transport-Security"] = f"max-age={self.hsts_max_age}; includeSubDomains"
         
         # Content Security Policy: Restrict resource loading
-        # This is a restrictive policy suitable for an API
-        csp_directives = [
-            "default-src 'self'",
-            "script-src 'self' 'unsafe-inline'",  # unsafe-inline needed for Swagger UI
-            "style-src 'self' 'unsafe-inline'",   # unsafe-inline needed for Swagger UI
-            "img-src 'self' data: https:",
-            "font-src 'self' data:",
-            "connect-src 'self'",
-            "frame-ancestors 'none'",
-            "base-uri 'self'",
-            "form-action 'self'"
-        ]
+        # Note: In development, we use 'unsafe-inline' for Swagger UI
+        # In production, consider using nonce-based or hash-based CSP
+        if self.is_dev:
+            # Development CSP (allows Swagger UI)
+            csp_directives = [
+                "default-src 'self'",
+                "script-src 'self' 'unsafe-inline'",  # unsafe-inline needed for Swagger UI
+                "style-src 'self' 'unsafe-inline'",   # unsafe-inline needed for Swagger UI
+                "img-src 'self' data: https:",
+                "font-src 'self' data:",
+                "connect-src 'self'",
+                "frame-ancestors 'none'",
+                "base-uri 'self'",
+                "form-action 'self'"
+            ]
+        else:
+            # Production CSP (stricter, may need adjustment based on your needs)
+            csp_directives = [
+                "default-src 'self'",
+                "script-src 'self'",
+                "style-src 'self'",
+                "img-src 'self' data:",
+                "font-src 'self'",
+                "connect-src 'self'",
+                "frame-ancestors 'none'",
+                "base-uri 'self'",
+                "form-action 'self'"
+            ]
         response.headers["Content-Security-Policy"] = "; ".join(csp_directives)
         
         # Referrer Policy: Don't leak referrer information

@@ -3,6 +3,9 @@ Security tests for VCC-URN system
 Tests input validation, authentication, and other security features
 """
 import pytest
+from starlette.testclient import TestClient
+from fastapi import FastAPI
+
 from vcc_urn.core.validation import (
     validate_manifest,
     validate_urn_length,
@@ -183,8 +186,6 @@ class TestSecurityHeaders:
     
     def test_security_headers_applied(self):
         """Security headers should be applied to responses"""
-        from starlette.testclient import TestClient
-        from fastapi import FastAPI
         from vcc_urn.core.security_middleware import SecurityHeadersMiddleware
         
         app = FastAPI()
@@ -207,8 +208,6 @@ class TestSecurityHeaders:
     
     def test_hsts_disabled_by_default(self):
         """HSTS should not be enabled by default (development)"""
-        from starlette.testclient import TestClient
-        from fastapi import FastAPI
         from vcc_urn.core.security_middleware import SecurityHeadersMiddleware
         
         app = FastAPI()
@@ -226,8 +225,6 @@ class TestSecurityHeaders:
     
     def test_hsts_enabled_when_configured(self):
         """HSTS should be enabled when configured"""
-        from starlette.testclient import TestClient
-        from fastapi import FastAPI
         from vcc_urn.core.security_middleware import SecurityHeadersMiddleware
         
         app = FastAPI()

@@ -18,6 +18,9 @@ MAX_UUID_LENGTH = 36
 MAX_VERSION_LENGTH = 64
 MAX_BATCH_SIZE = 100  # Maximum URNs per batch request
 
+# Control characters pattern (used for validation and sanitization)
+CONTROL_CHARS_PATTERN = r'[\x00-\x1f\x7f-\x9f]'
+
 
 class ManifestValidator(BaseModel):
     """Validate manifest structure and content"""
@@ -130,7 +133,8 @@ def sanitize_log_value(value: Any) -> str:
     s = str(value)
     
     # Remove newlines and control characters to prevent log injection
-    s = re.sub(r'[\r\n\t\x00-\x1f\x7f-\x9f]', ' ', s)
+    s = re.sub(CONTROL_CHARS_PATTERN, ' ', s)
+    s = s.replace('\r', ' ').replace('\n', ' ').replace('\t', ' ')
     
     # Truncate very long values
     max_log_length = 500
@@ -241,7 +245,7 @@ def validate_local_aktenzeichen(local: str) -> str:
         raise ValueError(f"Local Aktenzeichen too long: {len(local)} characters (max: {MAX_LOCAL_AKTENZEICHEN_LENGTH})")
     
     # Allow a wide range of characters for Aktenzeichen, but prevent control characters
-    if re.search(r'[\x00-\x1f\x7f-\x9f]', local):
+    if re.search(CONTROL_CHARS_PATTERN, local):
         raise ValueError("Local Aktenzeichen contains invalid control characters")
     
     return local

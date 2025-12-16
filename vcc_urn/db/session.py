@@ -3,6 +3,9 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.pool import QueuePool, StaticPool
 from vcc_urn.config import settings
 
+# Database query timeout in milliseconds (PostgreSQL)
+DB_QUERY_TIMEOUT_MS = 30000  # 30 seconds
+
 # SQLAlchemy setup with connection pooling and security improvements
 # Security: Configure connection pool limits to prevent resource exhaustion
 
@@ -37,7 +40,7 @@ else:
         def set_postgresql_timeout(dbapi_conn, connection_record):
             """Set statement timeout to 30 seconds for PostgreSQL"""
             cursor = dbapi_conn.cursor()
-            cursor.execute("SET statement_timeout = 30000")  # 30 seconds in milliseconds
+            cursor.execute(f"SET statement_timeout = {DB_QUERY_TIMEOUT_MS}")
             cursor.close()
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
