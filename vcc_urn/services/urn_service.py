@@ -3,6 +3,14 @@ from typing import Optional, Dict, Any, List
 from vcc_urn.repository import ManifestRepository
 from vcc_urn.urn import URN
 from vcc_urn.federation import resolve_via_peer
+from vcc_urn.core.validation import (
+    validate_manifest,
+    validate_urn_length,
+    validate_state_code,
+    validate_domain,
+    validate_obj_type,
+    validate_local_aktenzeichen,
+)
 
 class URNService:
     def __init__(self, db_session: Optional[Session] = None):
@@ -18,6 +26,12 @@ class URNService:
         return self._managed_session
 
     def generate(self, state: str, domain: str, obj_type: str, local: str, uuid: Optional[str] = None, version: Optional[str] = None, store: bool = True) -> str:
+        # Validate inputs to prevent injection attacks
+        state = validate_state_code(state)
+        domain = validate_domain(domain)
+        obj_type = validate_obj_type(obj_type)
+        local = validate_local_aktenzeichen(local)
+        
         urn_obj = URN.generate(state=state, domain=domain, obj_type=obj_type, local_aktenzeichen=local, uuid_str=uuid, version=version)
         urn_str = urn_obj.as_string()
         if store:
@@ -36,6 +50,8 @@ class URNService:
         return urn_str
 
     def resolve(self, urn: str) -> Dict[str, Any]:
+        # Validate URN length to prevent DoS
+        urn = validate_urn_length(urn)
         urn_obj = URN(urn)
         repo = ManifestRepository(self._get_session())
         manifest = repo.get_by_urn(urn)
@@ -63,12 +79,17 @@ class URNService:
 
     def validate(self, urn: str) -> Dict[str, Any]:
         try:
+            # Validate URN length to prevent DoS
+            urn = validate_urn_length(urn)
             urn_obj = URN(urn)
             return {"valid": True, "components": urn_obj.to_dict()}
         except Exception as e:
             return {"valid": False, "reason": str(e)}
 
     def store_manifest(self, urn: str, manifest: Dict[str, Any]):
+        # Validate URN length and manifest structure
+        urn = validate_urn_length(urn)
+        manifest = validate_manifest(manifest)
         URN(urn)
         repo = ManifestRepository(self._get_session())
         repo.upsert(urn, manifest)
