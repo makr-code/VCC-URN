@@ -41,7 +41,12 @@ async def lifespan(app: FastAPI):
     logger.info("Shutting down VCC-URN Resolver")
 
 
-app = FastAPI(title="VCC URN Resolver (OOP)", version="0.1.0", lifespan=lifespan)
+app = FastAPI(
+    title="VCC URN Resolver (OOP)", 
+    version="0.2.0",
+    description="Production-ready URN resolver with comprehensive security features",
+    lifespan=lifespan
+)
 
 # Add rate limiter state
 app.state.limiter = limiter
